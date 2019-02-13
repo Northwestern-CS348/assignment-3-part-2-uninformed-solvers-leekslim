@@ -34,7 +34,34 @@ class TowerOfHanoiGame(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### student code goes here
-        pass
+        peg1, peg2, peg3 = []  # will later be changed to tuples
+        list_of_pegs = self.kb.kb_ask(Fact("(inst ?peg peg)"))  # build list of all known pegs (typically 3)
+        for peg_binding in list_of_pegs:  # for each peg, find out if its empty or what disks are on it
+            if not Fact(instantiate(Statement("(empty ?peg)"), peg_binding)) in self.kb.facts:
+                # if not empty, get list of all disks on it
+                list_of_disks = self.kb.kb_ask(Fact(instantiate(Statement("(on ?disk ?peg)"), peg_binding)))
+                list_of_disk_int = []
+                for disk_binding in list_of_disks:
+                    disk_int = int(disk_binding.constant.element[4])
+                    list_of_disk_int.append(disk_int)
+                peg_int = int(peg_binding.constant.element[3])  # get this peg's identity
+                if peg_int == 1:
+                    while list_of_disk_int:  # depopulate this list and build the correct tuple
+                        smallest = min(list_of_disk_int)
+                        peg1.append(smallest)
+                        list_of_disk_int.remove(smallest)
+                elif peg_int == 2:
+                    while list_of_disk_int:  # depopulate this list and build the correct tuple
+                        smallest = min(list_of_disk_int)
+                        peg2.append(smallest)
+                        list_of_disk_int.remove(smallest)
+                else:
+                    while list_of_disk_int:  # depopulate this list and build the correct tuple
+                        smallest = min(list_of_disk_int)
+                        peg3.append(smallest)
+                        list_of_disk_int.remove(smallest)
+        state = (tuple(peg1), tuple(peg2), tuple(peg3))
+        return state
 
     def makeMove(self, movable_statement):
         """
@@ -53,7 +80,14 @@ class TowerOfHanoiGame(GameMaster):
             None
         """
         ### Student code goes here
-        pass
+        terms = movable_statement.terms
+        disk = terms[0]
+        origin = terms[1]
+        target = terms[2]
+        self.kb.kb_retract(Fact(Statement(("on", disk, origin))))
+        self.kb.kb_retract(Fact(Statement(("top", disk, origin))))
+        self.kb.kb_assert(Fact(Statement(("on", disk, target))))
+        self.kb.kb_assert(Fact(Statement(("top", disk, target))))
 
     def reverseMove(self, movable_statement):
         """
@@ -100,7 +134,10 @@ class Puzzle8Game(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### Student code goes here
-        pass
+        rows = ("pos1", "pos2", "pos3")  # possible y coordinates
+        columns = ("pos1", "pos2", "pos3")  # possible x coordinates
+        for y_pos in rows:
+            for x_pos in columns:
 
     def makeMove(self, movable_statement):
         """
@@ -119,7 +156,14 @@ class Puzzle8Game(GameMaster):
             None
         """
         ### Student code goes here
-        pass
+        terms = movable_statement.terms
+        disk = terms[0]
+        origin = terms[1]
+        target = terms[2]
+        self.kb.kb_retract(Fact(Statement(("on", disk, origin))))
+        self.kb.kb_retract(Fact(Statement(("top", disk, origin))))
+        self.kb.kb_assert(Fact(Statement(("on", disk, target))))
+        self.kb.kb_assert(Fact(Statement(("top", disk, target))))
 
     def reverseMove(self, movable_statement):
         """
