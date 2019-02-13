@@ -134,10 +134,24 @@ class Puzzle8Game(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### Student code goes here
-        rows = ("pos1", "pos2", "pos3")  # possible y coordinates
-        columns = ("pos1", "pos2", "pos3")  # possible x coordinates
+        rows = {"pos1": ("pos1", "pos2", "pos3"),  # rows are y coordinates, columns are x
+                "pos2": ("pos1", "pos2", "pos3"),
+                "pos3": ("pos1", "pos2", "pos3")}
+        state = ((0, 0, 0), (0, 0, 0), (0, 0, 0))
         for y_pos in rows:
-            for x_pos in columns:
+            y = int(y_pos[3])
+            for x_pos in rows[y_pos]:
+                x = int(x_pos[3])
+                ask = Fact(Statement(["coord", "?tile", x_pos, y_pos]))
+                binding = self.kb.kb_ask(ask)
+                tile = binding.constant.element[4]
+                tile_int = 0
+                if tile == 'y':  # tile name is 'empty'
+                    tile_int = -1
+                else:
+                    tile_int = int(tile)
+                state[y][x] = tile_int
+        return [tuple(state[0]), tuple(state[1]), tuple(state[2])]
 
     def makeMove(self, movable_statement):
         """
@@ -157,13 +171,16 @@ class Puzzle8Game(GameMaster):
         """
         ### Student code goes here
         terms = movable_statement.terms
-        disk = terms[0]
-        origin = terms[1]
-        target = terms[2]
-        self.kb.kb_retract(Fact(Statement(("on", disk, origin))))
-        self.kb.kb_retract(Fact(Statement(("top", disk, origin))))
-        self.kb.kb_assert(Fact(Statement(("on", disk, target))))
-        self.kb.kb_assert(Fact(Statement(("top", disk, target))))
+        tile = terms[0]
+        initial_x = terms[1]
+        initial_y = terms[2]
+        target_x = terms[3]
+        target_y = terms[4]
+        #  'empty tile' and movable tile basically swap coordinates
+        self.kb.kb_retract(Fact(Statement(("coord", tile, initial_x, initial_y))))
+        self.kb.kb_retract(Fact(Statement(("coord", "empty", target_x, target_y))))
+        self.kb.kb_assert(Fact(Statement(("coord", tile, target_x, target_y))))
+        self.kb.kb_assert(Fact(Statement(("coord", "empty", initial_x, initial_y))))
 
     def reverseMove(self, movable_statement):
         """
