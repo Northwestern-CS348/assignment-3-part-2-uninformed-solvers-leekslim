@@ -34,32 +34,38 @@ class TowerOfHanoiGame(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### student code goes here
-        peg1, peg2, peg3 = []  # will later be changed to tuples
-        list_of_pegs = self.kb.kb_ask(Fact("(inst ?peg peg)"))  # build list of all known pegs (typically 3)
+        peg1 = []  # will later be changed to tuples
+        peg2 = []
+        peg3 = []
+        a1 = parse_input("fact: (inst ?peg peg)")
+        list_of_pegs = self.kb.kb_ask(a1)  # build list of all known pegs (typically 3)
         for peg_binding in list_of_pegs:  # for each peg, find out if its empty or what disks are on it
-            if not Fact(instantiate(Statement("(empty ?peg)"), peg_binding)) in self.kb.facts:
+            if not Fact(instantiate(Statement(("empty", "?peg")), peg_binding)) in self.kb.facts:
                 # if not empty, get list of all disks on it
-                list_of_disks = self.kb.kb_ask(Fact(instantiate(Statement("(on ?disk ?peg)"), peg_binding)))
+                list_of_disks = self.kb.kb_ask(Fact(instantiate(Statement(("on", "?disk", "?peg")), peg_binding)))
                 list_of_disk_int = []
                 for disk_binding in list_of_disks:
-                    disk_int = int(disk_binding.constant.element[4])
+                    disk_int = int(disk_binding.bindings_dict["?disk"][4])
                     list_of_disk_int.append(disk_int)
-                peg_int = int(peg_binding.constant.element[3])  # get this peg's identity
+                peg_int = int(peg_binding.bindings_dict["?peg"][3])  # get this peg's identity
                 if peg_int == 1:
-                    while list_of_disk_int:  # depopulate this list and build the correct tuple
-                        smallest = min(list_of_disk_int)
-                        peg1.append(smallest)
-                        list_of_disk_int.remove(smallest)
+                    if list_of_disk_int:
+                        while list_of_disk_int:  # depopulate this list and build the correct tuple
+                            smallest = min(list_of_disk_int)
+                            peg1.append(smallest)
+                            list_of_disk_int.remove(smallest)
                 elif peg_int == 2:
-                    while list_of_disk_int:  # depopulate this list and build the correct tuple
-                        smallest = min(list_of_disk_int)
-                        peg2.append(smallest)
-                        list_of_disk_int.remove(smallest)
+                    if list_of_disk_int:
+                        while list_of_disk_int:  # depopulate this list and build the correct tuple
+                            smallest = min(list_of_disk_int)
+                            peg2.append(smallest)
+                            list_of_disk_int.remove(smallest)
                 else:
-                    while list_of_disk_int:  # depopulate this list and build the correct tuple
-                        smallest = min(list_of_disk_int)
-                        peg3.append(smallest)
-                        list_of_disk_int.remove(smallest)
+                    if list_of_disk_int:
+                        while list_of_disk_int:  # depopulate this list and build the correct tuple
+                            smallest = min(list_of_disk_int)
+                            peg3.append(smallest)
+                            list_of_disk_int.remove(smallest)
         state = (tuple(peg1), tuple(peg2), tuple(peg3))
         return state
 
@@ -84,10 +90,20 @@ class TowerOfHanoiGame(GameMaster):
         disk = terms[0]
         origin = terms[1]
         target = terms[2]
+        new_top_of_origin_binding = self.kb.kb_ask(Fact(Statement(("onTop", disk, "?obj"))))[0]
+        r1 = Fact(instantiate(Statement(("onTop", disk, "?obj")), new_top_of_origin_binding))
+        a1 = Fact(instantiate(Statement(("top", "?obj", origin)), new_top_of_origin_binding))
+        old_top_of_target_binding = self.kb.kb_ask(Fact(Statement(("top", "?obj", target))))[0]
+        r2 = Fact(instantiate(Statement(("top", "?obj", target)), old_top_of_target_binding))
+        a2 = Fact(instantiate(Statement(("onTop", disk, "?obj")), old_top_of_target_binding))
         self.kb.kb_retract(Fact(Statement(("on", disk, origin))))
         self.kb.kb_retract(Fact(Statement(("top", disk, origin))))
+        self.kb.kb_retract(r1)  # retract fact that moving disk was onTop of something
+        self.kb.kb_retract(r2)  # retract fact that target peg had something at top
         self.kb.kb_assert(Fact(Statement(("on", disk, target))))
         self.kb.kb_assert(Fact(Statement(("top", disk, target))))
+        self.kb.kb_assert(a1)  # what is now top of origin peg was what moving disk was onTop of
+        self.kb.kb_assert(a2)  # moving disk is now onTop of what was at top of target peg
 
     def reverseMove(self, movable_statement):
         """
