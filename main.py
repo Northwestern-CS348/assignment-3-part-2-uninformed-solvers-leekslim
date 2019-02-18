@@ -37,7 +37,7 @@ class KBTest(unittest.TestCase):
         """
         solver.solve()
 
-    def runPlayXSteps(self, solver, plays, timeout=99999):
+    def runPlayXSteps(self, solver, plays, timeout=5):
         """
         Wrapper function; calls playXSteps(..) with a timeout
 
