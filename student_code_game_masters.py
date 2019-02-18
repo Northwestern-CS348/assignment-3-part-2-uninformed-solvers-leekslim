@@ -153,21 +153,21 @@ class Puzzle8Game(GameMaster):
         rows = {"pos1": ("pos1", "pos2", "pos3"),  # rows are y coordinates, columns are x
                 "pos2": ("pos1", "pos2", "pos3"),
                 "pos3": ("pos1", "pos2", "pos3")}
-        state = ((0, 0, 0), (0, 0, 0), (0, 0, 0))
+        state = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         for y_pos in rows:
-            y = int(y_pos[3])
+            y = int(y_pos[3]) - 1
             for x_pos in rows[y_pos]:
-                x = int(x_pos[3])
+                x = int(x_pos[3]) - 1
                 ask = Fact(Statement(["coord", "?tile", x_pos, y_pos]))
-                binding = self.kb.kb_ask(ask)
-                tile = binding.constant.element[4]
+                binding = self.kb.kb_ask(ask)[0]
+                tile = binding.bindings_dict["?tile"][4]
                 tile_int = 0
                 if tile == 'y':  # tile name is 'empty'
                     tile_int = -1
                 else:
                     tile_int = int(tile)
                 state[y][x] = tile_int
-        return [tuple(state[0]), tuple(state[1]), tuple(state[2])]
+        return tuple([tuple(state[0]), tuple(state[1]), tuple(state[2])])
 
     def makeMove(self, movable_statement):
         """
