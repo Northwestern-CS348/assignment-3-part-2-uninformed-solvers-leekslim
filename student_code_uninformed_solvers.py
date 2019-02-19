@@ -71,4 +71,48 @@ class SolverBFS(UninformedSolver):
             True if the desired solution state is reached, False otherwise
         """
         ### Student code goes here
-        return True
+        if self.currentState.state == self.victoryCondition:   # first check if already resolved
+            return True
+        curr_depth = self.currentState.depth
+        found_move_at_curr_depth = False
+        while self.currentState.parent:  # find an ancestor who has unvisited descendants
+            self.gm.reverseMove(self.currentState.requiredMovable)
+            self.currentState = self.currentState.parent
+            ind = self.currentState.nextChildToVisit
+            if len(self.currentState.children) > ind:  # there are unvisited descendants from this node
+                found_move_at_curr_depth = True
+                break  # successfully found a move, break out of find ancestor loop
+        if not found_move_at_curr_depth:  # no more unvisited children at this depth
+            for visited_state in self.visited.keys:  # reset all next child indices
+                visited_state.nextChildToVisit = 0
+            curr_depth += 1
+        while curr_depth != self.currentState.depth:  # go downwards to leaf at correct depth
+            ind = self.currentState.nextChildToVisit  # refresh at each depth
+            self.currentState.nextChildToVisit += 1
+            if len(self.currentState.children) > ind:  # if did not change depth, this will be true and go down
+                self.currentState = self.currentState.children[ind]  # to new unvisited cousin at same depth
+                move = self.currentState.requiredMovable  # otherwise it will go to new depth until dead-end
+                self.gm.makeMove(move)  # if this is an unvisited leaf, will exit outer loop
+            else:  # dead-end, try to go back up tree again
+                found_move_at_new_depth = False
+                while self.currentState.parent:
+                    self.gm.reverseMove(self.currentState.requiredMovable)
+                    self.currentState = self.currentState.parent
+                    if len(self.currentState.children) > self.currentState.nextChildToVisit:  # found another path
+                        found_move_at_new_depth = True
+                        break
+                if not found_move_at_new_depth:  # all dead-ends, no more possible moves
+                    return False
+        if self.currentState.state == self.victoryCondition:  # move found, check if won
+            return True
+        else:
+            self.visited[self.currentState] = True  # have not won, add this state to visited, add children
+            possible_moves = self.gm.getMovables()
+            child_depth = curr_depth + 1
+            for move in possible_moves:
+                self.gm.makeMove(move)
+                new_state = GameState(self.gm.getGameState, child_depth, move)
+                if new_state not in self.visited:
+                    self.visited[new_state] = False
+                    self.currentState.children.append(new_state)
+            return False
