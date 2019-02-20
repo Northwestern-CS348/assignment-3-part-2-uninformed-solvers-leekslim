@@ -83,16 +83,25 @@ class SolverBFS(UninformedSolver):
                 found_move_at_curr_depth = True
                 break  # successfully found a move, break out of find ancestor loop
         if not found_move_at_curr_depth:  # no more unvisited children at this depth
-            for visited_state in self.visited.keys:  # reset all next child indices
+            for visited_state in self.visited.keys():  # reset all next child indices
                 visited_state.nextChildToVisit = 0
             curr_depth += 1
+            if len(self.visited) == 1:  # true if it's root node
+                possible_moves0 = self.gm.getMovables()
+                for move0 in possible_moves0:  # at root node, just add all new moves
+                    self.gm.makeMove(move0)
+                    new_state = GameState(self.gm.getGameState(), curr_depth, move0)
+                    new_state.parent = self.currentState
+                    self.visited[new_state] = False
+                    self.currentState.children.append(new_state)
+                    self.gm.reverseMove(move0)
         while curr_depth != self.currentState.depth:  # go downwards to leaf at correct depth
             ind = self.currentState.nextChildToVisit  # refresh at each depth
             self.currentState.nextChildToVisit += 1
             if len(self.currentState.children) > ind:  # if did not change depth, this will be true and go down
                 self.currentState = self.currentState.children[ind]  # to new unvisited cousin at same depth
-                move = self.currentState.requiredMovable  # otherwise it will go to new depth until dead-end
-                self.gm.makeMove(move)  # if this is an unvisited leaf, will exit outer loop
+                trying_move = self.currentState.requiredMovable  # otherwise it will go to new depth until dead-end
+                self.gm.makeMove(trying_move)  # if this is an unvisited leaf, will exit outer loop
             else:  # dead-end, try to go back up tree again
                 found_move_at_new_depth = False
                 while self.currentState.parent:
@@ -111,8 +120,10 @@ class SolverBFS(UninformedSolver):
             child_depth = curr_depth + 1
             for move in possible_moves:
                 self.gm.makeMove(move)
-                new_state = GameState(self.gm.getGameState, child_depth, move)
+                new_state = GameState(self.gm.getGameState(), child_depth, move)
                 if new_state not in self.visited:
                     self.visited[new_state] = False
+                    new_state.parent = self.currentState
                     self.currentState.children.append(new_state)
+                self.gm.reverseMove(move)
             return False
